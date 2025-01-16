@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mood Playlist Generator</title>
+    <style>
+        body {
+            background-image: url('https://upload.wikimedia.org/wikipedia/commons/8/84/Spotify_icon.svg');
+            background-size: 200px 200px; 
+            background-repeat: no-repeat;
+            background-position: center;
+            background-color: #000;
+            color: #fff;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
+
+        #moodForm, #playlistSection {
+            display: none;
+        }
+
+        button {
+            color: #fff;
+            width: 165px;
+            height: 30px;
+            cursor: pointer;
+            font-size: 17px;
+            border-radius: 1rem;
+            border: none; 
+            position: relative;
+            background: #100720;
+            transition: 0.1s;
+        }
+
+        button:hover {
+            background: #1DB954;
+        }
+
+        input[type="text"], textarea {
+            width: 80%;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 1rem;
+            border: 2px solid #1DB954;
+            background: #100720;
+            color: #fff;
+        }
+
+        input::placeholder, textarea::placeholder {
+            color: #bbb;
+        }
+
+        #assistantGreeting {
+            margin-top: 50px;
+        }
+
+        #playlist a {
+            color: #1DB954;
+            text-decoration: none;
+            font-size: 16px;
+        }
+
+        #playlist a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <h1 id="assistantGreeting">Hello, I am your mood improver assistant!</h1>
+    <div id="conversation">
+        <p>What is your name?</p>
+        <input type="text" id="nameInput" placeholder="Enter your name">
+        <button id="submitName">Submit</button>
+    </div>
+
+    <form id="moodForm">
+        <h2 id="personalGreeting"></h2>
+        <p>How are you feeling today?</p>
+        <textarea name="mood" id="moodInput" rows="4" cols="50" placeholder="Describe your mood"></textarea>
+        <button type="submit">Submit Mood</button>
+    </form>
+
+    <div id="playlistSection">
+        <h3>Well, I would like to invite you some good musics, may I?</h3>
+        <button id="generatePlaylist">Yes, generate playlist</button>
+        <div id="playlist"></div>
+    </div>
+
+    <script>
+        // Initializing elements
+        const conversationDiv = document.getElementById('conversation');
+        const nameInput = document.getElementById('nameInput');
+        const submitNameButton = document.getElementById('submitName');
+        const moodForm = document.getElementById('moodForm');
+        const personalGreeting = document.getElementById('personalGreeting');
+        const playlistSection = document.getElementById('playlistSection');
+        const generatePlaylistButton = document.getElementById('generatePlaylist');
+        const playlistDiv = document.getElementById('playlist');
+
+        
+        submitNameButton.addEventListener('click', () => {
+            const name = nameInput.value.trim();
+            if (name) {
+                conversationDiv.style.display = 'none';
+                personalGreeting.textContent = `Hello ${name}! How are you feeling today?`;
+                moodForm.style.display = 'block';
+            } else {
+                alert("Please enter your name!");
+            }
+        });
+
+        
+        moodForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const moodText = document.getElementById('moodInput').value.trim();
+            if (moodText) {
+                playlistSection.style.display = 'block';
+            } else {
+                alert("Please describe your mood!");
+            }
+        });
+
+        
+        generatePlaylistButton.addEventListener('click', () => {
+            const moodText = document.getElementById('moodInput').value.trim();
+            if (!moodText) {
+                alert("Please describe your mood!");
+                return;
+            }
+
+            fetch('/get_playlist', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'mood=' + encodeURIComponent(moodText)
+            })
+            .then(response => response.json())
+            .then(data => {
+                playlistDiv.innerHTML = '';
+                if (data.playlists && data.playlists.length > 0) {
+                    data.playlists.forEach(url => {
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.textContent = "Listen to Playlist";
+                        link.target = "_blank";
+                        playlistDiv.appendChild(link);
+                        playlistDiv.appendChild(document.createElement('br'));
+                    });
+                } else {
+                    playlistDiv.textContent = "No playlists found for your mood.";
+                }
+            })
+            .catch(error => {
+                console.error("Error fetching playlist:", error);
+                playlistDiv.textContent = "There was an error generating your playlist. Please try again later.";
+            });
+        });
+    </script>
+</body>
+</html>
